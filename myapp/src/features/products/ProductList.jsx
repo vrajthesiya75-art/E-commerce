@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
+import AmazonLayout from "../../components/AmazonLayout";
+import { useCart } from "../../context/CartContext";
+import Toast from "../../components/Toast";
+import { motion } from "framer-motion";
 
 import {
   Container,
   Row,
   Col,
-  Navbar,
   Form,
   Button,
   Card,
@@ -15,12 +18,25 @@ import {
 } from "react-bootstrap";
 
 const ProductList = () => {
+  const [searchParams] = useSearchParams();
+  const qFromUrl = searchParams.get("q") ?? "";
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
+  const { addToCart } = useCart();
+
+  const handleAddToCart = (product, e) => {
+    e.stopPropagation();
+    addToCart(product);
+    setToastMessage(`${product.title.substring(0, 30)}... added to cart!`);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -37,9 +53,10 @@ const ProductList = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
+      const searchTerm = search.trim() || qFromUrl.trim();
       let url = "/products?limit=100";
-      if (selectedCategory) url = `/products/category/${selectedCategory}`;
-      if (search.trim()) url = `/products/search?q=${encodeURIComponent(search.trim())}`;
+      if (selectedCategory && !searchTerm) url = `/products/category/${selectedCategory}`;
+      if (searchTerm) url = `/products/search?q=${encodeURIComponent(searchTerm)}`;
 
       const res = await axiosInstance.get(url);
       setProducts(res.data.products || res.data || []);
@@ -51,52 +68,16 @@ const ProductList = () => {
   };
 
   useEffect(() => {
-    fetchProducts();
-  }, [selectedCategory]);
+    setSearch(qFromUrl);
+  }, [qFromUrl]);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  useEffect(() => {
     fetchProducts();
-  };
+  }, [selectedCategory, search, qFromUrl]);
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa" }}>
-      {/* Header */}
-      <Navbar expand="lg" bg="dark" variant="dark" style={{ boxShadow: "0 2px 10px rgba(0,0,0,0.3)" }}>
-        <Container fluid>
-          <Navbar.Brand href="#" style={{ fontWeight: "bold", fontSize: "1.5rem" }}>
-            MyShop
-          </Navbar.Brand>
-
-          <Form
-            className="d-flex mx-auto"
-            style={{ maxWidth: "500px" }}
-            onSubmit={handleSearch}
-          >
-            <Form.Control
-              type="search"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              style={{
-                borderRadius: "50px 0 0 50px",
-                padding: "0.6rem 1.2rem",
-              }}
-            />
-            <Button
-              variant="warning"
-              type="submit"
-              style={{
-                borderRadius: "0 50px 50px 0",
-                padding: "0.6rem 1.5rem",
-              }}
-            >
-              Search
-            </Button>
-          </Form>
-        </Container>
-      </Navbar>
-
+    <AmazonLayout searchValue={qFromUrl || search}>
+      <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />
       <Container fluid className="py-4">
         <Row>
           {/* Sidebar */}
@@ -105,13 +86,13 @@ const ProductList = () => {
               style={{
                 backgroundColor: "#fff",
                 borderRadius: "8px",
-                position:"sticky",
+                position: "sticky",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
                 padding: "1.25rem",
                 border: "1px solid #dee2e6",
               }}
             >
-              <h5 style={{ marginBottom: "2rem",textAlign:"start",fontsize:"1.5rem", fontWeight: 900 }}>Categories</h5>
+              <h5 style={{ marginBottom: "2rem", textAlign: "start", fontSize: "1.25rem", fontWeight: 700 }}>Shop by Category</h5>
 
               <ListGroup variant="flush" >
                 <ListGroup.Item
@@ -125,10 +106,10 @@ const ProductList = () => {
                     fontWeight: "bold",
                     cursor: "pointer",
                     color: "#000",
-                    backgroundColor: selectedCategory === "" ? "#ffc107" : "transparent",
+                    backgroundColor: selectedCategory === "" ? "#febd69" : "transparent",
                   }}
                 >
-                  All Products
+                  All
                 </ListGroup.Item>
 
                 {categories.map((cat) => (
@@ -143,7 +124,7 @@ const ProductList = () => {
                       borderRadius: "50px",
                       cursor: "pointer",
                       color: "#000",
-                      backgroundColor: selectedCategory === cat.slug ? "#ffc107" : "transparent",
+                      backgroundColor: selectedCategory === cat.slug ? "#febd69" : "transparent",
                     }}
                   >
                     {cat.name}
@@ -167,28 +148,27 @@ const ProductList = () => {
               </div>
             ) : (
               <Row xs={1} sm={2} md={3} lg={4} className="g-4">
-                {products.map((product) => (
+                {products.map((product, index) => (
                   <Col key={product.id}>
-                    <Card
-                      className="h-100 border-0"
-                      style={{
-                        borderRadius: "10px",
-                        overflow: "hidden",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                        transition: "all 0.25s ease",
-                        cursor: "pointer",
-                        transform: "translateY(0)",
-                      }}
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = "translateY(-10px)";
-                        e.currentTarget.style.boxShadow = "0 12px 30px rgba(0,0,0,0.15)";
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = "translateY(0)";
-                        e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.08)";
-                      }}
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05, duration: 0.4 }}
                     >
+                      <Card
+                        className="h-100 border-0"
+                        style={{
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                          cursor: "pointer",
+                          backgroundColor: "#fff",
+                        }}
+                        onClick={() => navigate(`/product/${product.id}`)}
+                        as={motion.div}
+                        whileHover={{ y: -8, boxShadow: "0 12px 30px rgba(0,0,0,0.15)" }}
+                        transition={{ type: "spring", stiffness: 300 }}
+                      >
                       <div
                         style={{
                           height: "220px",
@@ -255,25 +235,27 @@ const ProductList = () => {
                             ${product.price?.toFixed(2)}
                           </h5>
 
-                          <Button
-                            variant="warning"
-                            size="sm"
-                            style={{
-                              width: "100%",
-                              borderRadius: "50px",
-                              fontWeight: 500,
-                              padding: "0.6rem",
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              alert("Added to cart! (demo)");
-                            }}
-                          >
-                            Add to Cart
-                          </Button>
+                          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                            <Button
+                              size="sm"
+                              style={{
+                                width: "100%",
+                                borderRadius: "6px",
+                                fontWeight: 600,
+                                padding: "0.6rem",
+                                backgroundColor: "#ffd814",
+                                borderColor: "#fcd200",
+                                color: "#0f1111",
+                              }}
+                              onClick={(e) => handleAddToCart(product, e)}
+                            >
+                              Add to Cart
+                            </Button>
+                          </motion.div>
                         </div>
                       </Card.Body>
                     </Card>
+                    </motion.div>
                   </Col>
                 ))}
               </Row>
@@ -281,7 +263,7 @@ const ProductList = () => {
           </Col>
         </Row>
       </Container>
-    </div>
+    </AmazonLayout>
   );
 };
 
