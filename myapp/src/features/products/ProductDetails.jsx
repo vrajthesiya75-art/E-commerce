@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import axiosInstance from "../../api/axiosInstance";
-import AmazonLayout from "../../components/AmazonLayout";
+import ShophubLayout from "../../components/ShophubLayout";
 import { useCart } from "../../context/CartContext";
 import Toast from "../../components/Toast";
 import { motion } from "framer-motion";
-import { Container, Row, Col, Card, Button, Spinner, Badge } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Button,
+  Spinner,
+  Badge,
+} from "react-bootstrap";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -58,7 +66,7 @@ const ProductDetail = () => {
 
   if (loading) {
     return (
-      <AmazonLayout>
+      <ShophubLayout>
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -68,7 +76,10 @@ const ProductDetail = () => {
             animate={{ rotate: 360 }}
             transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
           >
-            <Spinner animation="border" style={{ width: "4rem", height: "4rem", color: "#ff9900" }} />
+            <Spinner
+              animation="border"
+              style={{ width: "4rem", height: "4rem", color: "#ff9900" }}
+            />
           </motion.div>
           <motion.h4
             initial={{ opacity: 0, y: 10 }}
@@ -79,34 +90,51 @@ const ProductDetail = () => {
             Loading product details...
           </motion.h4>
         </motion.div>
-      </AmazonLayout>
+      </ShophubLayout>
     );
   }
 
   if (error || !product) {
     return (
-      <AmazonLayout>
+      <ShophubLayout>
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           className="text-center py-5 my-5"
         >
           <h3 className="text-danger">Product not found</h3>
-          <p className="text-muted">The product may have been removed or is unavailable.</p>
+          <p className="text-muted">
+            The product may have been removed or is unavailable.
+          </p>
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-            <Button style={{ backgroundColor: "#ffd814", borderColor: "#fcd200", color: "#0f1111" }} onClick={() => navigate(-1)}>
+            <Button
+              style={{
+                backgroundColor: "#ffd814",
+                borderColor: "#fcd200",
+                color: "#0f1111",
+              }}
+              onClick={() => navigate(-1)}
+            >
               Go Back
             </Button>
           </motion.div>
         </motion.div>
-      </AmazonLayout>
+      </ShophubLayout>
     );
   }
 
   return (
-    <AmazonLayout>
-      <Toast message={toastMessage} show={showToast} onClose={() => setShowToast(false)} />
-      <Container fluid className="py-3 py-md-4" style={{ backgroundColor: "#eaeded" }}>
+    <ShophubLayout>
+      <Toast
+        message={toastMessage}
+        show={showToast}
+        onClose={() => setShowToast(false)}
+      />
+      <Container
+        fluid
+        className="py-3 py-md-4"
+        style={{ backgroundColor: "#eaeded" }}
+      >
         {/* Breadcrumb */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -114,9 +142,16 @@ const ProductDetail = () => {
           className="mb-3"
           style={{ fontSize: "0.875rem" }}
         >
-          <Link to="/products" className="text-muted text-decoration-none">Home</Link>
+          <Link to="/products" className="text-muted text-decoration-none">
+            Home
+          </Link>
           <span className="mx-2 text-muted">›</span>
-          <Link to="/products" className="text-muted text-decoration-none text-capitalize">{product.category}</Link>
+          <Link
+            to="/products"
+            className="text-muted text-decoration-none text-capitalize"
+          >
+            {product.category}
+          </Link>
           <span className="mx-2 text-muted">›</span>
           <span className="text-dark">{product.title.substring(0, 50)}...</span>
         </motion.div>
@@ -177,7 +212,10 @@ const ProductDetail = () => {
                             height: "70px",
                             objectFit: "cover",
                             borderRadius: "8px",
-                            border: mainImage === img ? "3px solid #ff9900" : "2px solid #dee2e6",
+                            border:
+                              mainImage === img
+                                ? "3px solid #ff9900"
+                                : "2px solid #dee2e6",
                             cursor: "pointer",
                             transition: "all 0.2s ease",
                           }}
@@ -199,7 +237,10 @@ const ProductDetail = () => {
             >
               <Card className="border-0 shadow-sm mb-3">
                 <Card.Body className="p-4">
-                  <h1 className="fw-bold mb-2" style={{ fontSize: "1.75rem", lineHeight: 1.3 }}>
+                  <h1
+                    className="fw-bold mb-2"
+                    style={{ fontSize: "1.75rem", lineHeight: 1.3 }}
+                  >
                     {product.title}
                   </h1>
 
@@ -210,13 +251,19 @@ const ProductDetail = () => {
                     <span className="text-muted" style={{ fontSize: "0.9rem" }}>
                       ({product.reviews?.length || 0} ratings)
                     </span>
-                    <Link to="/products" className="text-primary text-decoration-none small">
+                    <Link
+                      to="/products"
+                      className="text-primary text-decoration-none small"
+                    >
                       See all reviews
                     </Link>
                   </div>
 
                   <div className="mb-3">
-                    <span className="text-danger fw-bold me-2" style={{ fontSize: "2rem" }}>
+                    <span
+                      className="text-danger fw-bold me-2"
+                      style={{ fontSize: "2rem" }}
+                    >
                       ${product.price?.toFixed(2)}
                     </span>
                     {product.discountPercentage && (
@@ -227,7 +274,10 @@ const ProductDetail = () => {
                   </div>
 
                   <div className="mb-4">
-                    <p className="text-muted mb-0" style={{ lineHeight: "1.7", fontSize: "0.95rem" }}>
+                    <p
+                      className="text-muted mb-0"
+                      style={{ lineHeight: "1.7", fontSize: "0.95rem" }}
+                    >
                       {product.description}
                     </p>
                   </div>
@@ -236,17 +286,27 @@ const ProductDetail = () => {
 
                   <div className="mb-4">
                     <p className="mb-2">
-                      <strong>Brand:</strong> <span className="text-capitalize">{product.brand || "N/A"}</span>
+                      <strong>Brand:</strong>{" "}
+                      <span className="text-capitalize">
+                        {product.brand || "N/A"}
+                      </span>
                     </p>
                     <p className="mb-2">
-                      <strong>Category:</strong> <span className="text-capitalize">{product.category}</span>
+                      <strong>Category:</strong>{" "}
+                      <span className="text-capitalize">
+                        {product.category}
+                      </span>
                     </p>
                     <p className="mb-0">
                       <strong>Availability:</strong>{" "}
                       {product.stock > 0 ? (
-                        <span className="text-success fw-bold">In Stock ({product.stock} left)</span>
+                        <span className="text-success fw-bold">
+                          In Stock ({product.stock} left)
+                        </span>
                       ) : (
-                        <span className="text-danger fw-bold">Out of Stock</span>
+                        <span className="text-danger fw-bold">
+                          Out of Stock
+                        </span>
                       )}
                     </p>
                   </div>
@@ -254,7 +314,10 @@ const ProductDetail = () => {
               </Card>
 
               {/* Buy Box */}
-              <Card className="border-0 shadow-sm" style={{ backgroundColor: "#fff" }}>
+              <Card
+                className="border-0 shadow-sm"
+                style={{ backgroundColor: "#fff" }}
+              >
                 <Card.Body className="p-4">
                   <div className="mb-3">
                     <label className="form-label fw-bold">Quantity:</label>
@@ -262,7 +325,9 @@ const ProductDetail = () => {
                       className="form-select"
                       style={{ maxWidth: "120px" }}
                       value={quantity}
-                      onChange={(e) => setQuantity(parseInt(e.target.value, 10))}
+                      onChange={(e) =>
+                        setQuantity(parseInt(e.target.value, 10))
+                      }
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
                         <option key={n} value={n}>
@@ -273,7 +338,10 @@ const ProductDetail = () => {
                   </div>
 
                   <div className="mb-3">
-                    <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                    <motion.div
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                    >
                       <Button
                         size="lg"
                         className="w-100 fw-bold py-3 mb-2"
@@ -290,7 +358,10 @@ const ProductDetail = () => {
                         Add to Cart
                       </Button>
                     </motion.div>
-                    <motion.div whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
+                    <motion.div
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
+                    >
                       <Button
                         size="lg"
                         variant="warning"
@@ -314,21 +385,27 @@ const ProductDetail = () => {
                       <span style={{ fontSize: "1.2rem" }}>🚚</span>
                       <div>
                         <strong className="d-block">FREE delivery</strong>
-                        <small className="text-muted">Order within 2 days for free delivery</small>
+                        <small className="text-muted">
+                          Order within 2 days for free delivery
+                        </small>
                       </div>
                     </div>
                     <div className="d-flex align-items-start gap-2 mb-2">
                       <span style={{ fontSize: "1.2rem" }}>↩️</span>
                       <div>
                         <strong className="d-block">Easy returns</strong>
-                        <small className="text-muted">30-day return policy</small>
+                        <small className="text-muted">
+                          30-day return policy
+                        </small>
                       </div>
                     </div>
                     <div className="d-flex align-items-start gap-2">
                       <span style={{ fontSize: "1.2rem" }}>🔒</span>
                       <div>
                         <strong className="d-block">Secure payment</strong>
-                        <small className="text-muted">Your payment information is safe</small>
+                        <small className="text-muted">
+                          Your payment information is safe
+                        </small>
                       </div>
                     </div>
                   </div>
@@ -338,7 +415,7 @@ const ProductDetail = () => {
           </Col>
         </Row>
       </Container>
-    </AmazonLayout>
+    </ShophubLayout>
   );
 };
 

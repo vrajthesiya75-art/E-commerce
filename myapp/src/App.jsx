@@ -9,6 +9,8 @@ import CartPage from "./features/cart/CartPage";
 import CheckoutPage from "./features/checkout/CheckoutPage";
 import PageTransition from "./components/PageTransition";
 import "bootstrap/dist/css/bootstrap.min.css";
+import UserProfile from "./features/user/UserProfile";
+import Logout from "./features/auth/Logout";
 
 function AppRoutes() {
   const location = useLocation();
@@ -66,6 +68,8 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
+        <Route path="/Userprofile" element={<UserProfile />} />
+        
 
         <Route
           path="*"

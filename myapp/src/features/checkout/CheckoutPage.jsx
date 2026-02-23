@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Container, Card, Button, Form, Row, Col } from "react-bootstrap";
-import AmazonLayout from "../../components/AmazonLayout";
+import ShophubLayout from "../../components/ShophubLayout";
 import { useCart } from "../../context/CartContext";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -15,43 +15,77 @@ const STEPS = [
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { items, cartSubtotal, clearCart } = useCart();
-  const [step, setStep] = useState(1);
-  const [shipping, setShipping] = useState({
-    fullName: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    zip: "",
-    phone: "",
+
+  // STEP (saved)
+  const [step, setStep] = useState(() => {
+    return Number(localStorage.getItem("checkout_step")) || 1;
   });
-  const [payment, setPayment] = useState({
-    cardNumber: "",
-    nameOnCard: "",
-    expiry: "",
-    cvv: "",
+
+  // SHIPPING (saved)
+  const [shipping, setShipping] = useState(() => {
+    const saved = localStorage.getItem("checkout_shipping");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          fullName: "",
+          addressLine1: "",
+          addressLine2: "",
+          city: "",
+          state: "",
+          zip: "",
+          phone: "",
+        };
   });
+
+  // PAYMENT (saved)
+  const [payment, setPayment] = useState(() => {
+    const saved = localStorage.getItem("checkout_payment");
+    return saved
+      ? JSON.parse(saved)
+      : {
+          cardNumber: "",
+          nameOnCard: "",
+          expiry: "",
+          cvv: "",
+        };
+  });
+
   const [orderId] = useState(() => "SH" + Date.now());
 
   const totalItems = items.reduce((s, i) => s + i.quantity, 0);
 
-  if (items.length === 0 && step < 4) {
-    return (
-      <AmazonLayout>
-        <Container className="py-5">
-          <Card className="border-0 shadow-sm">
-            <Card.Body className="text-center py-5">
-              <h2 className="mb-3">Your cart is empty</h2>
-              <p className="text-muted mb-4">Add items to your cart to checkout.</p>
-              <Button as={Link} to="/products" variant="warning">
-                Continue shopping
-              </Button>
-            </Card.Body>
-          </Card>
-        </Container>
-      </AmazonLayout>
-    );
-  }
+  /* ============================
+     LOCAL STORAGE AUTO SAVE
+  ============================ */
+
+  useEffect(() => {
+    localStorage.setItem("checkout_step", step);
+  }, [step]);
+
+  useEffect(() => {
+    localStorage.setItem("checkout_shipping", JSON.stringify(shipping));
+  }, [shipping]);
+
+  useEffect(() => {
+    localStorage.setItem("checkout_payment", JSON.stringify(payment));
+  }, [payment]);
+
+  useEffect(() => {
+    const checkoutData = {
+      step,
+      shipping,
+      payment,
+      cartItems: items,
+      subtotal: cartSubtotal,
+    };
+    localStorage.setItem("checkout_data", JSON.stringify(checkoutData));
+  }, [step, shipping, payment, items, cartSubtotal]);
+
+
+
+  /* ============================
+     HANDLERS
+  ============================ */
 
   const handleShippingSubmit = (e) => {
     e.preventDefault();
@@ -63,18 +97,54 @@ export default function CheckoutPage() {
     setStep(3);
   };
 
-  const handlePlaceOrder = () => {
-    setStep(4);
-    clearCart();
+  const handleContinue = () => {
+    localStorage.removeItem("checkout_step");
+    localStorage.removeItem("checkout_shipping");
+    localStorage.removeItem("checkout_payment");
+    localStorage.removeItem("checkout_data");
+    navigate("/products");
   };
+
+ const handlePlaceOrder = () => {
+  const newOrder = {
+    id: orderId,
+    date: new Date().toISOString(),
+    items: items,
+    shipping: shipping,
+    payment: {
+      ...payment,
+      cardNumber: "**** **** **** " + payment.cardNumber.slice(-4),
+    },
+    subtotal: cartSubtotal,
+  };
+
+  // Get old orders (if any)
+  const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+
+  // Add new order
+  existingOrders.push(newOrder);
+
+  // Save back to localStorage
+  localStorage.setItem("orders", JSON.stringify(existingOrders));
+
+  // Go to confirmation step
+  setStep(4);
+
+  // Clear cart only
+  clearCart();
+};
 
   const goBack = () => {
     if (step > 1) setStep(step - 1);
     else navigate("/cart");
   };
 
+  /* ============================
+     UI (UNCHANGED)
+  ============================ */
+
   return (
-    <AmazonLayout>
+    <ShophubLayout>
       <Container className="py-4">
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -93,7 +163,12 @@ export default function CheckoutPage() {
                   borderRadius: "6px",
                   fontSize: "0.85rem",
                   fontWeight: step >= s.id ? 600 : 400,
-                  backgroundColor: step === s.id ? "#ffd814" : step > s.id ? "#e6f3e6" : "#f0f0f0",
+                  backgroundColor:
+                    step === s.id
+                      ? "#ffd814"
+                      : step > s.id
+                        ? "#e6f3e6"
+                        : "#f0f0f0",
                   color: step >= s.id ? "#0f1111" : "#666",
                 }}
               >
@@ -125,7 +200,12 @@ export default function CheckoutPage() {
                           <Form.Control
                             required
                             value={shipping.fullName}
-                            onChange={(e) => setShipping({ ...shipping, fullName: e.target.value })}
+                            onChange={(e) =>
+                              setShipping({
+                                ...shipping,
+                                fullName: e.target.value,
+                              })
+                            }
                             placeholder="John Doe"
                           />
                         </Form.Group>
@@ -134,7 +214,12 @@ export default function CheckoutPage() {
                           <Form.Control
                             required
                             value={shipping.addressLine1}
-                            onChange={(e) => setShipping({ ...shipping, addressLine1: e.target.value })}
+                            onChange={(e) =>
+                              setShipping({
+                                ...shipping,
+                                addressLine1: e.target.value,
+                              })
+                            }
                             placeholder="123 Main St"
                           />
                         </Form.Group>
@@ -142,7 +227,12 @@ export default function CheckoutPage() {
                           <Form.Label>Address line 2 (optional)</Form.Label>
                           <Form.Control
                             value={shipping.addressLine2}
-                            onChange={(e) => setShipping({ ...shipping, addressLine2: e.target.value })}
+                            onChange={(e) =>
+                              setShipping({
+                                ...shipping,
+                                addressLine2: e.target.value,
+                              })
+                            }
                             placeholder="Apt, suite, etc."
                           />
                         </Form.Group>
@@ -153,7 +243,12 @@ export default function CheckoutPage() {
                               <Form.Control
                                 required
                                 value={shipping.city}
-                                onChange={(e) => setShipping({ ...shipping, city: e.target.value })}
+                                onChange={(e) =>
+                                  setShipping({
+                                    ...shipping,
+                                    city: e.target.value,
+                                  })
+                                }
                                 placeholder="Mumbai"
                               />
                             </Form.Group>
@@ -164,7 +259,12 @@ export default function CheckoutPage() {
                               <Form.Control
                                 required
                                 value={shipping.state}
-                                onChange={(e) => setShipping({ ...shipping, state: e.target.value })}
+                                onChange={(e) =>
+                                  setShipping({
+                                    ...shipping,
+                                    state: e.target.value,
+                                  })
+                                }
                                 placeholder="Maharashtra"
                               />
                             </Form.Group>
@@ -175,7 +275,12 @@ export default function CheckoutPage() {
                               <Form.Control
                                 required
                                 value={shipping.zip}
-                                onChange={(e) => setShipping({ ...shipping, zip: e.target.value })}
+                                onChange={(e) =>
+                                  setShipping({
+                                    ...shipping,
+                                    zip: e.target.value,
+                                  })
+                                }
                                 placeholder="400001"
                               />
                             </Form.Group>
@@ -187,15 +292,30 @@ export default function CheckoutPage() {
                             required
                             type="tel"
                             value={shipping.phone}
-                            onChange={(e) => setShipping({ ...shipping, phone: e.target.value })}
+                            onChange={(e) =>
+                              setShipping({
+                                ...shipping,
+                                phone: e.target.value,
+                              })
+                            }
                             placeholder="10-digit mobile number"
                           />
                         </Form.Group>
                         <div className="d-flex gap-2">
-                          <Button type="button" variant="outline-secondary" onClick={goBack}>
+                          <Button
+                            type="button"
+                            variant="outline-secondary"
+                            onClick={goBack}
+                          >
                             Back to cart
                           </Button>
-                          <Button type="submit" style={{ backgroundColor: "#ff9900", borderColor: "#ff9900" }}>
+                          <Button
+                            type="submit"
+                            style={{
+                              backgroundColor: "#ff9900",
+                              borderColor: "#ff9900",
+                            }}
+                          >
                             Continue to payment
                           </Button>
                         </div>
@@ -225,7 +345,12 @@ export default function CheckoutPage() {
                             required
                             placeholder="1234 5678 9012 3456"
                             value={payment.cardNumber}
-                            onChange={(e) => setPayment({ ...payment, cardNumber: e.target.value })}
+                            onChange={(e) =>
+                              setPayment({
+                                ...payment,
+                                cardNumber: e.target.value,
+                              })
+                            }
                             maxLength={19}
                           />
                         </Form.Group>
@@ -235,7 +360,12 @@ export default function CheckoutPage() {
                             required
                             placeholder="John Doe"
                             value={payment.nameOnCard}
-                            onChange={(e) => setPayment({ ...payment, nameOnCard: e.target.value })}
+                            onChange={(e) =>
+                              setPayment({
+                                ...payment,
+                                nameOnCard: e.target.value,
+                              })
+                            }
                           />
                         </Form.Group>
                         <Row>
@@ -246,7 +376,12 @@ export default function CheckoutPage() {
                                 required
                                 placeholder="12/25"
                                 value={payment.expiry}
-                                onChange={(e) => setPayment({ ...payment, expiry: e.target.value })}
+                                onChange={(e) =>
+                                  setPayment({
+                                    ...payment,
+                                    expiry: e.target.value,
+                                  })
+                                }
                               />
                             </Form.Group>
                           </Col>
@@ -258,17 +393,32 @@ export default function CheckoutPage() {
                                 type="password"
                                 placeholder="123"
                                 value={payment.cvv}
-                                onChange={(e) => setPayment({ ...payment, cvv: e.target.value })}
+                                onChange={(e) =>
+                                  setPayment({
+                                    ...payment,
+                                    cvv: e.target.value,
+                                  })
+                                }
                                 maxLength={4}
                               />
                             </Form.Group>
                           </Col>
                         </Row>
                         <div className="d-flex gap-2">
-                          <Button type="button" variant="outline-secondary" onClick={goBack}>
+                          <Button
+                            type="button"
+                            variant="outline-secondary"
+                            onClick={goBack}
+                          >
                             Back
                           </Button>
-                          <Button type="submit" style={{ backgroundColor: "#ff9900", borderColor: "#ff9900" }}>
+                          <Button
+                            type="submit"
+                            style={{
+                              backgroundColor: "#ff9900",
+                              borderColor: "#ff9900",
+                            }}
+                          >
                             Continue to review
                           </Button>
                         </div>
@@ -294,27 +444,41 @@ export default function CheckoutPage() {
                       <div className="mb-4">
                         <h6 className="text-muted mb-2">Shipping to</h6>
                         <p className="mb-0">
-                          {shipping.fullName}<br />
+                          {shipping.fullName}
+                          <br />
                           {shipping.addressLine1}
-                          {shipping.addressLine2 && `, ${shipping.addressLine2}`}<br />
-                          {shipping.city}, {shipping.state} {shipping.zip}<br />
+                          {shipping.addressLine2 &&
+                            `, ${shipping.addressLine2}`}
+                          <br />
+                          {shipping.city}, {shipping.state} {shipping.zip}
+                          <br />
                           {shipping.phone}
                         </p>
                       </div>
                       <div className="mb-4">
                         <h6 className="text-muted mb-2">Payment</h6>
                         <p className="mb-0">
-                          Card ending in ***{payment.cardNumber.replace(/\s/g, "").slice(-4) || "----"}<br />
+                          Card ending in ***
+                          {payment.cardNumber.replace(/\s/g, "").slice(-4) ||
+                            "----"}
+                          <br />
                           {payment.nameOnCard}
                         </p>
                       </div>
                       <div className="d-flex gap-2">
-                        <Button type="button" variant="outline-secondary" onClick={goBack}>
+                        <Button
+                          type="button"
+                          variant="outline-secondary"
+                          onClick={goBack}
+                        >
                           Back
                         </Button>
                         <Button
                           onClick={handlePlaceOrder}
-                          style={{ backgroundColor: "#ff9900", borderColor: "#ff9900" }}
+                          style={{
+                            backgroundColor: "#ff9900",
+                            borderColor: "#ff9900",
+                          }}
                         >
                           Place order
                         </Button>
@@ -342,11 +506,19 @@ export default function CheckoutPage() {
                         ✅
                       </motion.div>
                       <h2 className="mb-2">Thank you for your order!</h2>
-                      <p className="text-muted mb-2">Order ID: <strong>{orderId}</strong></p>
+                      <p className="text-muted mb-2">
+                        Order ID: <strong>{orderId}</strong>
+                      </p>
                       <p className="text-muted small mb-4">
                         A confirmation email would be sent to your email (demo).
                       </p>
-                      <Button as={Link} to="/products" style={{ backgroundColor: "#ff9900", borderColor: "#ff9900" }}>
+                      <Button
+                        style={{
+                          backgroundColor: "#ff9900",
+                          borderColor: "#ff9900",
+                        }}
+                        onClick={handleContinue}
+                      >
                         Continue shopping
                       </Button>
                     </Card.Body>
@@ -370,7 +542,8 @@ export default function CheckoutPage() {
                   {step < 4 && (
                     <>
                       <p className="mb-2">
-                        Subtotal ({totalItems} items): <strong>${cartSubtotal.toFixed(2)}</strong>
+                        Subtotal ({totalItems} items):{" "}
+                        <strong>${cartSubtotal.toFixed(2)}</strong>
                       </p>
                       <p className="text-success small mb-3">FREE delivery</p>
                       {items.slice(0, 3).map((item) => (
@@ -378,14 +551,25 @@ export default function CheckoutPage() {
                           <img
                             src={item.thumbnail}
                             alt=""
-                            style={{ width: 40, height: 40, objectFit: "contain", borderRadius: 4 }}
+                            style={{
+                              width: 40,
+                              height: 40,
+                              objectFit: "contain",
+                              borderRadius: 4,
+                            }}
                           />
-                          <span className="text-truncate flex-grow-1">{item.title}</span>
-                          <span className="fw-bold">${(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="text-truncate flex-grow-1">
+                            {item.title}
+                          </span>
+                          <span className="fw-bold">
+                            ${(item.price * item.quantity).toFixed(2)}
+                          </span>
                         </div>
                       ))}
                       {items.length > 3 && (
-                        <p className="text-muted small">+{items.length - 3} more item(s)</p>
+                        <p className="text-muted small">
+                          +{items.length - 3} more item(s)
+                        </p>
                       )}
                       <hr />
                       <p className="mb-0 fw-bold">
@@ -394,7 +578,9 @@ export default function CheckoutPage() {
                     </>
                   )}
                   {step === 4 && (
-                    <p className="mb-0 text-muted small">Your order has been placed successfully.</p>
+                    <p className="mb-0 text-muted small">
+                      Your order has been placed successfully.
+                    </p>
                   )}
                 </Card.Body>
               </Card>
@@ -402,6 +588,6 @@ export default function CheckoutPage() {
           </Col>
         </Row>
       </Container>
-    </AmazonLayout>
+    </ShophubLayout>
   );
 }

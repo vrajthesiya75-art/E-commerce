@@ -3,8 +3,12 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Form, Navbar, Container, Nav } from "react-bootstrap";
 import { motion } from "framer-motion";
 import { useCart } from "../context/CartContext";
+import Logout from "../features/auth/Logout";
 
 const headerStyle = {
+  position: "sticky",
+  top: 0,
+  zIndex: 1000,
   backgroundColor: "#131921",
   minHeight: "60px",
 };
@@ -24,7 +28,11 @@ const deliverStyle = {
   lineHeight: 1.2,
   textDecoration: "none",
 };
-const deliverLabelStyle = { color: "#ccc", fontSize: "0.7rem" };
+
+const deliverLabelStyle = {
+  color: "#ccc",
+  fontSize: "0.7rem",
+};
 
 const navLinkStyle = {
   color: "#fff",
@@ -34,11 +42,17 @@ const navLinkStyle = {
   alignItems: "center",
 };
 
-export default function AmazonHeader({ searchValue, onSearchSubmit, searchPlaceholder = "Search ShopHub" }) {
+export default function ShophubHeader({
+  searchValue,
+  onSearchSubmit,
+  searchPlaceholder = "Search ShopHub",
+}) {
   const { cartCount } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
+
   const [localSearch, setLocalSearch] = useState(searchValue ?? "");
+  const [showLogout, setShowLogout] = useState(false); // 🔥 modal control
 
   useEffect(() => {
     const q = new URLSearchParams(location.search).get("q");
@@ -53,29 +67,38 @@ export default function AmazonHeader({ searchValue, onSearchSubmit, searchPlaceh
     if (onSearchSubmit) onSearchSubmit(q);
   };
 
-  const handleNavClick = (e, path) => {
-    e.preventDefault();
-    navigate(path);
-  };
-
   return (
     <>
       <Navbar expand="lg" style={headerStyle} variant="dark">
         <Container fluid className="px-3">
+          {/* Logo */}
           <Navbar.Brand as={Link} to="/products" style={logoStyle}>
-            <motion.span whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
+            <motion.span
+              whileHover={{ scale: 1.05 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
               ShopHub
             </motion.span>
           </Navbar.Brand>
 
+          {/* Deliver */}
           <Nav className="flex-row align-items-center gap-2 gap-lg-3 me-2">
-            <Link to="/products" style={deliverStyle} className="d-none d-md-flex flex-column text-start">
+            <Link
+              to="/products"
+              style={deliverStyle}
+              className="d-none d-md-flex flex-column text-start"
+            >
               <span style={deliverLabelStyle}>Deliver to</span>
               <span className="text-white fw-bold">India</span>
             </Link>
           </Nav>
 
-          <Form className="d-flex flex-grow-1 mx-2 mx-lg-4" style={{ maxWidth: "700px" }} onSubmit={handleSearch}>
+          {/* Search */}
+          <Form
+            className="d-flex flex-grow-1 mx-2 mx-lg-4"
+            style={{ maxWidth: "700px" }}
+            onSubmit={handleSearch}
+          >
             <Form.Control
               name="search"
               type="search"
@@ -99,15 +122,9 @@ export default function AmazonHeader({ searchValue, onSearchSubmit, searchPlaceh
             </button>
           </Form>
 
+          {/* Right Side Nav */}
           <Nav className="flex-row align-items-center gap-2">
-            <Link
-              to="/products"
-              className="text-white text-decoration-none d-none d-md-flex flex-column text-start"
-              style={{ fontSize: "0.8rem" }}
-            >
-              <span style={deliverLabelStyle}>Returns</span>
-              <span className="fw-bold">& Orders</span>
-            </Link>
+            {/* Cart */}
             <Link
               to="/cart"
               className="text-white text-decoration-none d-flex align-items-center gap-1"
@@ -126,35 +143,71 @@ export default function AmazonHeader({ searchValue, onSearchSubmit, searchPlaceh
               </span>
               <span className="fw-bold">Cart</span>
             </Link>
-            <button
-              type="button"
-              className="btn btn-link text-white text-decoration-none p-0 ms-2 d-none d-md-inline"
-              style={{ fontSize: "0.85rem" }}
-              onClick={() => {
-                localStorage.removeItem("user");
-                localStorage.removeItem("accessToken");
-                window.location.href = "/";
-              }}
+
+            {/* Profile */}
+            <Link
+              to="/userprofile"
+              className="text-white text-decoration-none d-flex align-items-center gap-1"
+              style={{ fontSize: "0.9rem" }}
             >
-              Sign out
-            </button>
-          </Nav>
-        </Container>
-      </Navbar>
-      <Navbar style={{ backgroundColor: "#232f3e", minHeight: "39px" }} variant="dark" className="py-0">
-        <Container fluid className="px-3">
-          <Nav className="flex-row gap-3 align-items-center flex-wrap" style={{ fontSize: "0.875rem" }}>
-            <Link to="/products" style={navLinkStyle} className="py-2">
-              <span className="me-2">☰</span> All
+              <span style={{ fontSize: "1.6rem" }}>👤</span>
+              <span className="fw-bold">Profile</span>
             </Link>
-            <Link to="/products" style={navLinkStyle} className="py-2">Today's Deals</Link>
-            <Link to="/products" style={navLinkStyle} className="py-2">Customer Service</Link>
-            <Link to="/products" style={navLinkStyle} className="py-2">Registry</Link>
-            <Link to="/products" style={navLinkStyle} className="py-2">Gift Cards</Link>
-            <Link to="/products" style={navLinkStyle} className="py-2">Sell</Link>
+
+            {/* 🔥 Logout Button (UPDATED) */}
+           <div style={{ position: "relative" }}>
+  <button
+    type="button"
+    className="btn btn-link text-white text-decoration-none p-0 ms-2 d-none d-md-inline"
+    style={{ fontSize: "0.85rem" }}
+    onClick={() => setShowLogout(!showLogout)}
+  >
+    Sign out
+  </button>
+
+  <Logout
+    isOpen={showLogout}
+    onClose={() => setShowLogout(false)}
+  />
+</div>
           </Nav>
         </Container>
       </Navbar>
+
+      {/* Second Navbar */}
+      <Navbar
+        style={{ backgroundColor: "#232f3e", minHeight: "39px" }}
+        variant="dark"
+        className="py-0"
+      >
+        <Container fluid className="px-3">
+          <Nav
+            className="flex-row gap-3 align-items-center flex-wrap"
+            style={{ fontSize: "0.875rem" }}
+          >
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              ☰ All
+            </Link>
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              Today's Deals
+            </Link>
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              Customer Service
+            </Link>
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              Registry
+            </Link>
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              Gift Cards
+            </Link>
+            <Link to="/products" style={navLinkStyle} className="py-2">
+              Sell
+            </Link>
+          </Nav>
+        </Container>
+      </Navbar>
+
+     
     </>
   );
 }
