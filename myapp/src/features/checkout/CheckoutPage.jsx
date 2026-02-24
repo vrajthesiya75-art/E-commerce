@@ -14,6 +14,7 @@ const STEPS = [
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const [placedOrder, setPlacedOrder] = useState(null);
   const { items, cartSubtotal, clearCart } = useCart();
 
   // STEP (saved)
@@ -97,17 +98,78 @@ export default function CheckoutPage() {
     setStep(3);
   };
 
-  const handleContinue = () => {
-    localStorage.removeItem("checkout_step");
-    localStorage.removeItem("checkout_shipping");
-    localStorage.removeItem("checkout_payment");
-    localStorage.removeItem("checkout_data");
-    navigate("/products");
-  };
+  // const handleContinue = () => {
+  //   localStorage.removeItem("checkout_step");
+  //   localStorage.removeItem("checkout_shipping");
+  //   localStorage.removeItem("checkout_payment");
+  //   localStorage.removeItem("checkout_data");
+  //   navigate("/products");
+  // };
 
- const handlePlaceOrder = () => {
+//  const handlePlaceOrder = () => {
+//   const newOrder = {
+//     id: orderId,
+//     date: new Date().toISOString(),
+//     items: items,
+//     shipping: shipping,
+//     payment: {
+//       ...payment,
+//       cardNumber: "**** **** **** " + payment.cardNumber.slice(-4),
+//     },
+//     subtotal: cartSubtotal,
+//   };
+
+//   // Get old orders (if any)
+//   const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
+
+//   // Add new order
+//   existingOrders.push(newOrder);
+
+//   // Save back to localStorage
+//   localStorage.setItem("orders", JSON.stringify(existingOrders));
+
+//   // Go to confirmation step
+//   setStep(4);
+
+//   // Clear cart only
+//   clearCart();
+// };
+
+const handleContinue = () => {
+  // Reset states
+  setStep(1);
+  setPlacedOrder(null);
+
+  setShipping({
+    fullName: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    zip: "",
+    phone: "",
+  });
+
+  setPayment({
+    cardNumber: "",
+    nameOnCard: "",
+    expiry: "",
+    cvv: "",
+  });
+
+  // Remove storage again (safety)
+  localStorage.removeItem("checkout_step");
+  localStorage.removeItem("checkout_shipping");
+  localStorage.removeItem("checkout_payment");
+  localStorage.removeItem("checkout_data");
+
+  navigate("/products");
+};
+
+
+const handlePlaceOrder = () => {
   const newOrder = {
-    id: orderId,
+    orderId: orderId,
     date: new Date().toISOString(),
     items: items,
     shipping: shipping,
@@ -118,21 +180,26 @@ export default function CheckoutPage() {
     subtotal: cartSubtotal,
   };
 
-  // Get old orders (if any)
   const existingOrders = JSON.parse(localStorage.getItem("orders")) || [];
-
-  // Add new order
   existingOrders.push(newOrder);
-
-  // Save back to localStorage
   localStorage.setItem("orders", JSON.stringify(existingOrders));
 
-  // Go to confirmation step
+  // ✅ Set receipt data
+  setPlacedOrder(newOrder);
+
+  // ✅ Show receipt step
   setStep(4);
 
-  // Clear cart only
+  // ✅ Clear cart
   clearCart();
+
+  // ✅ Remove saved checkout data
+  localStorage.removeItem("checkout_step");
+  localStorage.removeItem("checkout_shipping");
+  localStorage.removeItem("checkout_payment");
+  localStorage.removeItem("checkout_data");
 };
+
 
   const goBack = () => {
     if (step > 1) setStep(step - 1);
@@ -488,43 +555,74 @@ export default function CheckoutPage() {
                 </motion.div>
               )}
 
-              {step === 4 && (
+              {step === 4 && placedOrder && (
                 <motion.div
                   key="step4"
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
                 >
-                  <Card className="border-0 shadow-sm text-center py-5">
-                    <Card.Body>
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ type: "spring", delay: 0.2 }}
-                        style={{ fontSize: "4rem", marginBottom: "1rem" }}
-                      >
-                        ✅
-                      </motion.div>
-                      <h2 className="mb-2">Thank you for your order!</h2>
-                      <p className="text-muted mb-2">
-                        Order ID: <strong>{orderId}</strong>
-                      </p>
-                      <p className="text-muted small mb-4">
-                        A confirmation email would be sent to your email (demo).
-                      </p>
-                      <Button
-                        style={{
-                          backgroundColor: "#ff9900",
-                          borderColor: "#ff9900",
-                        }}
-                        onClick={handleContinue}
-                      >
-                        Continue shopping
-                      </Button>
-                    </Card.Body>
-                  </Card>
-                </motion.div>
-              )}
+               <Card className="border-0 shadow-sm">
+                  <Card.Header className="bg-white border-bottom">
+                    <h5 className="fw-bold mb-0">Order Receipt</h5>
+                  </Card.Header>
+
+                <Card.Body>
+                  <h6>
+                    Order ID: <strong>{placedOrder.orderId}</strong>
+                  </h6>
+
+                  <p className="text-muted small">
+                    {new Date(placedOrder.date).toLocaleString()}
+                  </p>
+
+                <hr />
+
+              {placedOrder.items.map((item) => (
+                <div key={item.id} className="d-flex justify-content-between mb-2">
+                  <span>
+                    {item.title} × {item.quantity}
+                  </span>
+                  <strong>
+                    ${(item.price * item.quantity).toFixed(2)}
+                  </strong>
+                </div>
+              ))}
+
+            <hr />
+
+              <div className="d-flex justify-content-between">
+                <strong>Total</strong>
+                <strong>${placedOrder.subtotal.toFixed(2)}</strong>
+              </div>
+
+            <hr />
+
+            <h6 className="mt-4">Shipping Address</h6>
+              <p className="small">
+                {placedOrder.shipping.fullName}<br />
+                {placedOrder.shipping.addressLine1}<br />
+                {placedOrder.shipping.city}, {placedOrder.shipping.state} {placedOrder.shipping.zip}
+              </p>
+
+            <h6>Payment</h6>
+            <p className="small">
+              {placedOrder.payment.cardNumber}<br />
+              {placedOrder.payment.nameOnCard}
+            </p>
+
+            <div className="text-center mt-4">
+            <Button
+              style={{ backgroundColor: "#ff9900", borderColor: "#ff9900" }}
+              onClick={handleContinue}
+            >
+                Continue shopping
+            </Button>
+        </div>
+      </Card.Body>
+    </Card>
+  </motion.div>
+)}
             </AnimatePresence>
           </Col>
 

@@ -141,7 +141,7 @@ export default function ShophubHeader({
                   </span>
                 )}
               </span>
-              <span className="fw-bold">Cart</span>
+              <span className="fw-bold">  </span>
             </Link>
 
             {/* Profile */}
@@ -151,25 +151,25 @@ export default function ShophubHeader({
               style={{ fontSize: "0.9rem" }}
             >
               <span style={{ fontSize: "1.6rem" }}>👤</span>
-              <span className="fw-bold">Profile</span>
+              <span className="fw-bold"></span>
             </Link>
 
             {/* 🔥 Logout Button (UPDATED) */}
-           <div style={{ position: "relative" }}>
-  <button
-    type="button"
-    className="btn btn-link text-white text-decoration-none p-0 ms-2 d-none d-md-inline"
-    style={{ fontSize: "0.85rem" }}
-    onClick={() => setShowLogout(!showLogout)}
-  >
-    Sign out
-  </button>
+            <div style={{ position: "relative" }}>
+             <button
+               type="button"
+                className="btn btn-link text-white text-decoration-none p-0 ms-2 d-none d-md-inline"
+                style={{ fontSize: "0.85rem" }}
+                onClick={() => setShowLogout(!showLogout)}
+              >
+               Sign out
+            </button>
 
-  <Logout
-    isOpen={showLogout}
-    onClose={() => setShowLogout(false)}
-  />
-</div>
+              <Logout
+                isOpen={showLogout}
+                onClose={() => setShowLogout(false)}
+              />
+            </div>
           </Nav>
         </Container>
       </Navbar>

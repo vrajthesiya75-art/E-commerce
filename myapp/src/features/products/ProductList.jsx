@@ -44,8 +44,9 @@ const ProductList = () => {
   const [total, setTotal] = useState(0);
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const [showModal, setShowModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState(null);
 
-  // Add Product Form State
   const [newProduct, setNewProduct] = useState({
     title: "",
     description: "",
@@ -63,21 +64,14 @@ const ProductList = () => {
     setTimeout(() => setShowToast(false), 3000);
   };
 
-  const handleDeleteProduct = async (productId, e) => {
-    e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await deleteProduct(productId);
-        setToastMessage("Product deleted successfully!");
-        setShowToast(true);
-        fetchProducts();
-      } catch (err) {
-        setToastMessage("Failed to delete product");
-        setShowToast(true);
-      }
-      setTimeout(() => setShowToast(false), 3000);
-    }
-  };
+ 
+
+  const handleDeleteProduct = async (id) => {
+   
+  await deleteProduct(selectedProductId);
+  setShowModal(false);
+  setProducts(products.filter(product => product.id !== selectedProductId));
+};
 
   const handleAddProduct = async (e) => {
     e.preventDefault();
@@ -358,7 +352,11 @@ const ProductList = () => {
                               right: "10px",
                               zIndex: 10,
                             }}
-                            onClick={(e) => handleDeleteProduct(product.id, e)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedProductId(product.id);
+                              setShowModal(true);
+                            }}
                           >
                             ×
                           </Button>
@@ -456,7 +454,30 @@ const ProductList = () => {
                             </div>
                           </Card.Body>
                         </Card>
-                      </motion.div>
+                      <Modal show={showModal} onHide={() => setShowModal(false)} centered backdrop={false}>
+                          <Modal.Header closeButton>
+                            <Modal.Title>Confirm Delete</Modal.Title>
+                          </Modal.Header>
+
+                          <Modal.Body>
+                             Are you sure you want to delete this product?
+                          </Modal.Body>
+
+                        <Modal.Footer>
+                          <Button variant="secondary" onClick={() => setShowModal(false)}>
+                            Cancel
+                          </Button>
+                          <Button
+                            variant="danger"
+                            onClick={() => {
+                              handleDeleteProduct(product);
+                            }}
+                          >
+                          Delete
+                          </Button>
+                        </Modal.Footer>
+                      </Modal>
+                    </motion.div>
                     </Col>
                   ))}
                 </Row>

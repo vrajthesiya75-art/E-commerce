@@ -15,6 +15,7 @@ import PostList from "./features/posts/PostList";
 import PostDetail from "./features/posts/PostDetail";
 import TodoList from "./features/todos/TodoList";
 import Logout from "./features/auth/Logout";
+import ReceiptPage from "./features/checkout/ReceiptPage";
 
 function AppRoutes() {
   const location = useLocation();
@@ -70,6 +71,14 @@ function AppRoutes() {
                 <CheckoutPage />
               </PageTransition>
             </PrivateRoute>
+          }
+        />
+        <Route
+          path="/receipt"
+          element={
+            <PrivateRoute>
+              <ReceiptPage />
+            </PrivateRoute> 
           }
         />
         <Route
