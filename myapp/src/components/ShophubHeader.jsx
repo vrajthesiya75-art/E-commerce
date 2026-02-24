@@ -203,6 +203,15 @@ export default function ShophubHeader({
             <Link to="/products" style={navLinkStyle} className="py-2">
               Sell
             </Link>
+            <Link to="/users" style={navLinkStyle} className="py-2">
+              Users
+            </Link>
+            <Link to="/posts" style={navLinkStyle} className="py-2">
+              Posts
+            </Link>
+            <Link to="/todos" style={navLinkStyle} className="py-2">
+              Todos
+            </Link>
           </Nav>
         </Container>
       </Navbar>

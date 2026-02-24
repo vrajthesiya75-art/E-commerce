@@ -10,6 +10,10 @@ import CheckoutPage from "./features/checkout/CheckoutPage";
 import PageTransition from "./components/PageTransition";
 import "bootstrap/dist/css/bootstrap.min.css";
 import UserProfile from "./features/user/UserProfile";
+import UserList from "./features/user/UserList";
+import PostList from "./features/posts/PostList";
+import PostDetail from "./features/posts/PostDetail";
+import TodoList from "./features/todos/TodoList";
 import Logout from "./features/auth/Logout";
 
 function AppRoutes() {
@@ -68,9 +72,56 @@ function AppRoutes() {
             </PrivateRoute>
           }
         />
-        <Route path="/Userprofile" element={<UserProfile />} />
-        
-
+        <Route
+          path="/Userprofile"
+          element={
+            <PrivateRoute>
+              <PageTransition>
+                <UserProfile />
+              </PageTransition>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <PrivateRoute>
+              <PageTransition>
+                <UserList />
+              </PageTransition>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/posts"
+          element={
+            <PrivateRoute>
+              <PageTransition>
+                <PostList />
+              </PageTransition>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/post/:id"
+          element={
+            <PrivateRoute>
+              <PageTransition>
+                <PostDetail />
+              </PageTransition>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/todos"
+          element={
+            <PrivateRoute>
+              <PageTransition>
+                <TodoList />
+              </PageTransition>
+            </PrivateRoute>
+          }
+        />
         <Route
           path="*"
           element={

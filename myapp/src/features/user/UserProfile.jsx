@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Container, Card, Row, Col, Spinner } from "react-bootstrap";
-import { getUserProfileAPI } from "./userAPI";
+import { getAuthUser } from "../../api/dummyjsonAPI";
 import ShophubLayout from "../../components/ShophubLayout";
 
 export default function UserProfile() {
@@ -13,10 +13,16 @@ export default function UserProfile() {
 
   const fetchUser = async () => {
     try {
-      const res = await getUserProfileAPI(1); // change when login added
-      setUser(res.data);
+      // Get logged-in user from auth token
+      const data = await getAuthUser();
+      setUser(data);
     } catch (error) {
       console.error("User fetch error:", error);
+      // Fallback: try to get user from localStorage
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
     } finally {
       setLoading(false);
     }

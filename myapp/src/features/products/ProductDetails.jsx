@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import axiosInstance from "../../api/axiosInstance";
+import { getSingleProduct, updateProduct } from "../../api/dummyjsonAPI";
 import ShophubLayout from "../../components/ShophubLayout";
 import { useCart } from "../../context/CartContext";
 import Toast from "../../components/Toast";
@@ -13,6 +13,8 @@ import {
   Button,
   Spinner,
   Badge,
+  Modal,
+  Form,
 } from "react-bootstrap";
 
 const ProductDetail = () => {
@@ -27,6 +29,13 @@ const ProductDetail = () => {
   const [toastMessage, setToastMessage] = useState("");
   const [showToast, setShowToast] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    price: "",
+    stock: "",
+  });
 
   const handleAddToCart = () => {
     if (product) {
@@ -51,9 +60,15 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axiosInstance.get(`/products/${id}`);
-        setProduct(res.data);
-        setMainImage(res.data.thumbnail || "");
+        const data = await getSingleProduct(id);
+        setProduct(data);
+        setMainImage(data.thumbnail || "");
+        setEditForm({
+          title: data.title || "",
+          description: data.description || "",
+          price: data.price || "",
+          stock: data.stock || "",
+        });
       } catch (err) {
         console.error("Product fetch error:", err);
         setError("Failed to load product");
@@ -63,6 +78,27 @@ const ProductDetail = () => {
     };
     fetchProduct();
   }, [id]);
+
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    try {
+      const updated = await updateProduct(id, {
+        title: editForm.title,
+        description: editForm.description,
+        price: parseFloat(editForm.price),
+        stock: parseInt(editForm.stock),
+      });
+      setProduct(updated);
+      setShowEditModal(false);
+      setToastMessage("Product updated successfully!");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    } catch (err) {
+      setToastMessage("Failed to update product");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+    }
+  };
 
   if (loading) {
     return (
@@ -237,12 +273,21 @@ const ProductDetail = () => {
             >
               <Card className="border-0 shadow-sm mb-3">
                 <Card.Body className="p-4">
-                  <h1
-                    className="fw-bold mb-2"
-                    style={{ fontSize: "1.75rem", lineHeight: 1.3 }}
-                  >
-                    {product.title}
-                  </h1>
+                  <div className="d-flex justify-content-between align-items-start mb-2">
+                    <h1
+                      className="fw-bold mb-0"
+                      style={{ fontSize: "1.75rem", lineHeight: 1.3 }}
+                    >
+                      {product.title}
+                    </h1>
+                    <Button
+                      variant="outline-secondary"
+                      size="sm"
+                      onClick={() => setShowEditModal(true)}
+                    >
+                      ✏️ Edit
+                    </Button>
+                  </div>
 
                   <div className="d-flex align-items-center gap-3 mb-3">
                     <Badge bg="warning" text="dark" className="fs-6 px-3 py-2">
@@ -415,6 +460,80 @@ const ProductDetail = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Edit Product Modal */}
+      <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Product</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleUpdateProduct}>
+          <Modal.Body>
+            <Form.Group className="mb-3">
+              <Form.Label>Title</Form.Label>
+              <Form.Control
+                type="text"
+                required
+                value={editForm.title}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, title: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Description</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={4}
+                required
+                value={editForm.description}
+                onChange={(e) =>
+                  setEditForm({ ...editForm, description: e.target.value })
+                }
+              />
+            </Form.Group>
+            <Row>
+              <Col>
+                <Form.Group className="mb-3">
+                  <Form.Label>Price</Form.Label>
+                  <Form.Control
+                    type="number"
+                    step="0.01"
+                    required
+                    value={editForm.price}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, price: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+              <Col>
+                <Form.Group className="mb-3">
+                  <Form.Label>Stock</Form.Label>
+                  <Form.Control
+                    type="number"
+                    required
+                    value={editForm.stock}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, stock: e.target.value })
+                    }
+                  />
+                </Form.Group>
+              </Col>
+            </Row>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button
+              variant="secondary"
+              onClick={() => setShowEditModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button variant="warning" type="submit">
+              Update Product
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </ShophubLayout>
   );
 };
